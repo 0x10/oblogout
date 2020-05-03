@@ -4,7 +4,7 @@ import sys
 import subprocess
 import gi
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gio, Gtk, Gdk
+from gi.repository import Gio, Gtk
 
 # Logout
 def exit_openbox():
@@ -19,23 +19,21 @@ def shutdown():
     os.system("sudo shutdown -h now && openbox --exit")
 
 class ObLogoutWindow(Gtk.ApplicationWindow):
-    def __init__(self, *args, **kwargs ):
+    def __init__(self, app, *args, **kwargs ):
         super().__init__(*args, **kwargs)
+        self.parent = app
         self.set_border_width(20)
         self.set_resizable(False)
-        self.set_gravity(Gdk.Gravity.CENTER)
         self.set_position(Gtk.WindowPosition.CENTER_ALWAYS)
 
         # Setting up the self.grid in which the elements are to be positionned
         self.hbox = Gtk.Box(spacing=10)
         self.add(self.hbox)
 
-        logout_buttons = [ [ "_Cancel", self.on_cancel ],
-                           [ "_Log out", self.on_logout ],
-                           [ "_Reboot", self.on_reboot ],
-                           [ "_Shutdown", self.on_shutdown ] ]
-
-        for button in logout_buttons:
+        for button in [ [ "_Cancel", self.on_cancel ],
+                        [ "_Log out", self.on_logout ],
+                        [ "_Reboot", self.on_reboot ],
+                        [ "_Shutdown", self.on_shutdown ] ]:
             new_button = Gtk.Button.new_with_mnemonic(button[0])
             new_button.connect("clicked", button[1])
             self.hbox.pack_start(new_button, True, True, 0)
@@ -43,7 +41,7 @@ class ObLogoutWindow(Gtk.ApplicationWindow):
         self.show_all()
 
     def on_cancel(self, button):
-        Gtk.main_quit()
+        self.parent.quit()
 
     def on_logout(self, button):
         exit_openbox()
@@ -74,15 +72,11 @@ class Application(Gtk.Application):
             # Windows are associated with the application
             # when the last one is closed the application shuts down
             self.window = ObLogoutWindow(
+                app=self,
                 application=self,
                 title="Openbox Logout")
 
         self.window.present()
-
-    def on_quit(self, action, param):
-        if self.window.do_delete_event(None) != True:
-            self.quit()
-
 
 if __name__ == "__main__":
     app = Application()
